@@ -18,7 +18,11 @@ sources = [
 ]
 
 include-directories = [
-    "include"
+    "include",
+    "deps/llvm-project/llvm/include/",
+    "deps/llvm-project/llvm/lib/Target/X86/",
+    "build/deps/llvm-project/llvm/lib/Target/X86",
+    "build/deps/llvm-project/llvm/include/",
 ]
 
 link-libraries = [

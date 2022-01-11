@@ -67,6 +67,10 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${vmdevirt_SOURCES})
 
 target_include_directories(vmdevirt PRIVATE
 	include
+	"deps/llvm-project/llvm/include/"
+	"deps/llvm-project/llvm/lib/Target/X86/"
+	"build/deps/llvm-project/llvm/lib/Target/X86"
+	"build/deps/llvm-project/llvm/include/"
 )
 
 target_link_libraries(vmdevirt PRIVATE
