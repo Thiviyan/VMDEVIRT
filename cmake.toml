@@ -1,0 +1,37 @@
+[project]
+name = "vmdevirt"
+
+cmake-before = """
+    set(LLVM_TARGETS_TO_BUILD X86)
+    set(LLVM_INCLUDE_TESTS OFF)
+    set(LLVM_INCLUDE_EXAMPLES OFF)
+"""
+
+[subdir.deps]
+
+[target.vmdevirt]
+type = "executable"
+
+sources = [
+    "src/**.cpp",
+    "include/**.hpp"
+]
+
+include-directories = [
+    "include"
+]
+
+link-libraries = [
+    "LLVMCore",
+    "LLVMCodeGen",
+    "LLVMSupport",
+    "LLVMLinker",
+    "LLVMX86CodeGen",
+    "LLVMX86AsmParser",
+    "LLVMX86Desc",
+    "LLVMX86Disassembler",
+    "LLVMX86Info",
+    "LLVMAsmParser",
+    "LLVMPasses",
+    "vmemu"
+]
