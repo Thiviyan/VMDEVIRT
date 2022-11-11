@@ -1,0 +1,85 @@
+version: 1.0.{build}
+image: 
+  - macos-mojave
+  - Visual Studio 2019
+platform: 
+  - x64
+configuration: 
+  - Release
+environment:
+  game_name: MyGameName
+
+matrix:
+  fast_finish: true
+
+for:
+  -
+    matrix:
+      only:
+        - image: macos-mojave
+
+    artifacts:
+      - path: _Build/XCode/build/Release
+        name: $(game_name)-mac-Release
+        type: zip
+
+    deploy:
+      provider: S3
+      access_key_id: [REDACTED]
+      secret_access_key:
+        secure: [REDACTED]
+      bucket: [REDACTED]
+      region: us-west-2
+      unzip: true
+      set_public: false
+      folder: appveyor/$(game_name)/Mac
+      artifact: $(game_name)-mac-Release
+
+    before_build:
+      - sh: Bin/cmake.sh --xcode
+
+    build_script:
+      - sh: cmake --build _Build/XCode --config Release
+
+  -
+    matrix:
+      only:
+        - image: Visual Studio 2019
+
+    artifacts:
+      - path: _Build/VS16/Release
+        name: $(game_name)-win-Release
+        type: zip
+
+    deploy:
+      provider: S3
+      access_key_id: [REDACTED]
+      secret_access_key:
+        secure: [REDACTED]
+      bucket: [REDACTED]
+      region: us-west-2
+      unzip: true
+      set_public: false
+      folder: appveyor/$(game_name)/Windows
+      artifact: $(game_name)-win-Release
+
+    before_build:
+     - cmake -G "Visual Studio 16 2019" -A x64 -S . -B "_Build/VS16"
+
+    build:
+      project: _Build/VS16/$(game_name).sln
+      parallel: true
+      verbosity: minimal
+
+notifications:
+  - provider: Webhook
+    url: https://[REDACTED].php?build_status_appveyor=Succeeded
+    method: GET
+    on_build_success: true
+    on_build_failure: false
+
+  - provider: Webhook
+    url: https://[REDACTED].php?build_status_appveyor=Failed
+    method: GET
+    on_build_success: false
+    on_build_failure: true
