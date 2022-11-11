@@ -33,6 +33,12 @@ blocks:
           commands: &ref_1
             - '${CXX} --version'
             - '${CXX} ${CXXFLAGS} -v src/main.cpp'
+        - name: 'Job #2'
+          commands:
+            - cmake -B build
+        - name: 'Job #3'
+          commands:
+            - cmake --build build
       agent:
         machine:
           type: e1-standard-2
