@@ -9,8 +9,17 @@ blocks:
     dependencies:
       - Linux
       - Linux Clang 10
+      - Linux Clang 5.0
+      - Linux Clang 6.0
+      - Linux Clang 7
+      - Linux Clang 8
+      - Linux Clang 9
       - Linux GCC 10
-      - Xcode
+      - Linux GCC 5
+      - Linux GCC 6
+      - Linux GCC 7
+      - Linux GCC 8
+      - Linux GCC 9
     skip:
       when: true
     task:
