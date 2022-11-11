@@ -1,0 +1,7 @@
+name: 'Setup Windows'
+    description: 'Host Arch'
+    required: true
+    runs:
+    using: 'node12'
+    main: main.js
+  
