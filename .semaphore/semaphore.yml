@@ -1,24 +1,206 @@
+# Use, modification, and distribution are
+# subject to the Boost Software License, Version 1.0. (See accompanying
+# file LICENSE.txt)
+#
+# Copyright René Ferdinand Rivera Morell 2020-2021.
+
+# Configuration for https://semaphoreci.com/.
+
 version: v1.0
-name: Initial Pipeline
+name: C++ Tooling
+
+# Need a default / placeholder agent as otherwise the fake blocks error in
+# YAML parsing as they don't get an agent.
 agent:
   machine:
     type: e1-standard-2
-    os_image: ubuntu2004
+    os_image: ubuntu1804
+
 blocks:
-  - name: 'Block #1'
+  # These are fake blocks defining various yaml reusable items.
+  # We need the fake blocks as teh Semaphore YAML parser doesn't allow custom
+  # keys on anything.
+
+  # Empty block to group the definition sub-blocks.
+  - name: Definitions
+    dependencies: []
+    skip: { when: true }
     task:
       jobs:
-        - name: 'Job #1'
-          commands:
-            - checkout
-  - name: 'Block #2'
-    task:
-      jobs:
-        - name: 'Job #1'
-          commands:
-            - cmake -B build
-        - name: 'Job #2'
-          commands:
-            - cmake --build build
-        - name: 'Job #3'
+        - name: Placeholder
           commands: []
+
+  # This single block is a multi-part template for the real Linux blocks below.
+  # It's in parts, as Semaphore doesn't support the map-merge key (<<). There
+  # are only two ways to do sequencing in Semaphore: through the commands
+  # (prologue, jobs, and epilogue) and block chaining. The latter has the
+  # drawback that blocks run in separate VM instances and hence one needs to
+  # save & restore enough context to make that work. The former has the
+  # limitation that it sequences the single prologue, then fans out to multiple
+  # parallel jobs commands, then back to single epilogue. For more complex
+  # builds one is better off writing separate scripts to invoke for the
+  # commands.
+  - name: Linux Definitions
+    dependencies: ["Definitions"]
+    skip: { when: true }
+    task: &linux_task
+      prologue: &linux_prologue
+        commands:
+          # Some debug information.
+          - uname -a
+          # Checkout our source repo.
+          - checkout
+          # Install the gcc or clang version we desire.
+          - ./.ci_playground/linux-cxx-install.sh
+      jobs: &linux_jobs
+        - name: Install+Compile
+          commands:
+            # Some debug information.
+            - ${CXX} --version
+            # Compile the minimal C++ file.
+            - ${CXX} ${CXXFLAGS} -v src/main.cpp
+      agent: &linux_agent
+        machine:
+          type: e1-standard-2
+          os_image: ubuntu1804
+
+  # Common Xcode definition.
+  - name: Xcode Definitions
+    dependencies: ["Definitions"]
+    skip: { when: true }
+    task: &xcode_task
+      # secrets: &xcode_secrets
+      #   - name: dev-apple
+      prologue: &xcode_prologue
+        commands:
+          # Some debug information.
+          - uname -a
+          # Checkout our source repo.
+          - checkout
+          # Install the desired Xcode version.
+          - ./.ci_playground/macos-xcode-install.sh
+      jobs: &xcode_jobs
+        - name: Install+Compile
+          commands:
+            # Some debug information.
+            - ${CXX} --version
+            # Compile the minimal C++ file. For Xcode we force it to use the
+            # macOS SDK in the installed Xcode.
+            - ${CXX} ${CXXFLAGS} -v --sysroot "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" src/main.cpp
+      agent: &xcode_agent
+        machine:
+          type: a1-standard-4
+          os_image: macos-xcode11
+
+  # Our real blocks..
+
+  # Empty block to group Linux sub-blocks.
+  - name: Linux
+    dependencies: []
+    skip: { when: true }
+    task:
+      jobs:
+        - name: Placeholder
+          commands: []
+  # Linux sub-blocks.. Set the needed env vars and compose the reused parts
+  # from the definitions above.
+  - name: Linux GCC 10
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [{name: CXX, value: g++-10}, {name: PACKAGES, value: g++-10}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux GCC 9
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [{name: CXX, value: g++-9}, {name: PACKAGES, value: g++-9}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux GCC 8
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [{name: CXX, value: g++-8}, {name: PACKAGES, value: g++-8}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux GCC 7
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [{name: CXX, value: g++-7}, {name: PACKAGES, value: g++-7}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux GCC 6
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [{name: CXX, value: g++-6}, {name: PACKAGES, value: g++-6}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux GCC 5
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [{name: CXX, value: g++-5}, {name: PACKAGES, value: g++-5}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux Clang 10
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [
+        {name: CXX, value: clang++-10}, {name: PACKAGES, value: clang-10},
+        {name: LLVM_VER, value: '10'}, {name: LLVM_OS, value: bionic}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux Clang 9
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [
+        {name: CXX, value: clang++-9}, {name: PACKAGES, value: clang-9},
+        {name: LLVM_VER, value: '9'}, {name: LLVM_OS, value: bionic}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux Clang 8
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [
+        {name: CXX, value: clang++-8}, {name: PACKAGES, value: clang-8},
+        {name: LLVM_VER, value: '8'}, {name: LLVM_OS, value: bionic}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux Clang 7
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [
+        {name: CXX, value: clang++-7}, {name: PACKAGES, value: clang-7},
+        {name: LLVM_VER, value: '7'}, {name: LLVM_OS, value: bionic}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux Clang 6.0
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [
+        {name: CXX, value: clang++-6.0}, {name: PACKAGES, value: clang-6.0},
+        {name: LLVM_VER, value: '6.0'}, {name: LLVM_OS, value: bionic}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+  - name: Linux Clang 5.0
+    dependencies: ["Linux"]
+    task: {
+      env_vars: [
+        {name: CXX, value: clang++-5.0}, {name: PACKAGES, value: clang-5.0},
+        {name: LLVM_VER, value: '5.0'}, {name: LLVM_OS, value: bionic}],
+      prologue: *linux_prologue, jobs: *linux_jobs, agent: *linux_agent }
+
+  # Empty block to group Xcode sub-blocks.
+  - name: Xcode
+    dependencies: []
+    skip: { when: true }
+    task:
+      jobs:
+        - name: Placeholder
+          commands: []
+  # Xcode sub-blocks..
+  - name: Xcode 11.5
+    dependencies: ["Xcode"]
+    task: {
+      env_vars: [{name: CXX, value: clang++}, {name: XCODE_VERSION, value: "11.5"}],
+      # secrets: *xcode_secrets,
+      prologue: *xcode_prologue, jobs: *xcode_jobs, agent: *xcode_agent}
+  - name: Xcode 11.4.1
+    dependencies: ["Xcode"]
+    task: {
+      env_vars: [{name: CXX, value: clang++}, {name: XCODE_VERSION, value: "11.4.1"}],
+      # secrets: *xcode_secrets,
+      prologue: *xcode_prologue, jobs: *xcode_jobs, agent: *xcode_agent}
+  - name: Xcode 11.3.1
+    dependencies: ["Xcode"]
+    task: {
+      env_vars: [{name: CXX, value: clang++}, {name: XCODE_VERSION, value: "11.3.1"}],
+      # secrets: *xcode_secrets,
+      prologue: *xcode_prologue, jobs: *xcode_jobs, agent: *xcode_agent}
