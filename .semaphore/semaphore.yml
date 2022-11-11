@@ -11,3 +11,14 @@ blocks:
         - name: 'Job #1'
           commands:
             - checkout
+  - name: 'Block #2'
+    task:
+      jobs:
+        - name: 'Job #1'
+          commands:
+            - cmake -B build
+        - name: 'Job #2'
+          commands:
+            - cmake --build build
+        - name: 'Job #3'
+          commands: []
