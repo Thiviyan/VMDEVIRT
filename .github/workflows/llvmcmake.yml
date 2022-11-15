@@ -23,30 +23,7 @@ jobs:
            submodules: recursive
     
     - name: Setup WinLibs
-  # You may pin to the exact commit or the version.
-  # uses: bwoodsend/setup-winlibs-action@046918d96ec27b7bee9d69cf2cb80d4d131d0b10
-  uses: bwoodsend/setup-winlibs-action@v1.5
-  with:
-    # Release tag of WinLibs.
-Defaults to the tag with the newest version of gcc.
-
-    tag: # optional, default is latest
-    # Install with LLVM + clang. Otherwise just install gcc.
-
-    with_clang: # optional
-    # Location to install into. The `mingw32` folder will be placed in this
-folder so that the path to gcc would be `$destination/mingw32/bin/gcc`.
-Defaults to the value of `%localappdata%`.
-
-    destination: # optional
-    # If true prepend the `bin` directory to `$PATH`.
-
-    add_to_path: # optional, default is true
-    # Which architecture to install.
-Either `x86_64` or `64` for 64 bit or `i686`  or `32` for 32 bit.
-
-    architecture: # optional, default is x86_64
-        
+      uses: bwoodsend/setup-winlibs-action@v1.5
       
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
